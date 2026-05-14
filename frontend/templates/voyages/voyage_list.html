@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Mes Voyages - Voyage Maroc{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <h1 class="fw-bold mb-2">
+                <i class="fas fa-plane-departure me-2" style="color:#3b82f6;"></i> Mes Voyages Confirmés
+            </h1>
+            <p class="mb-5" style="color:#94a3b8;">Retrouvez ici tous les itinéraires que vous avez validés.</p>
+
+            {% if voyages %}
+            <div class="row g-4">
+                {% for voyage in voyages %}
+                <div class="col-12">
+                    <div class="card-voyage p-4">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-4 text-center p-3" style="background:rgba(59,130,246,0.1); border-radius:12px; min-width:80px;">
+                                    <span class="d-block fw-bold fs-4" style="color:#3b82f6;">{{ voyage.date_creation|date:"d" }}</span>
+                                    <span class="text-uppercase" style="font-size:0.75rem; color:#94a3b8;">{{ voyage.date_creation|date:"M Y" }}</span>
+                                </div>
+                                <div>
+                                    <h4 class="fw-bold mb-1">{{ voyage.destination }}</h4>
+                                    <div style="color:#94a3b8;">
+                                        <i class="fas fa-calendar-day me-1"></i> {{ voyage.duree }} jours &bull; 
+                                        <i class="fas fa-wallet me-1"></i> {{ voyage.budget }} MAD
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'voyage_detail' voyage.pk %}" class="btn btn-outline-primary px-4" style="border-radius:50px;">
+                                    <i class="fas fa-eye me-1"></i> Détails
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Mini résumé des lieux -->
+                        <div class="mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);">
+                            <small class="text-uppercase fw-bold mb-2 d-block" style="font-size:0.7rem; color:#475569; letter-spacing:1px;">Lieux à visiter :</small>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for itineraire in voyage.itineraire_set.all %}
+                                    {% for lieu in itineraire.lieux.all %}
+                                    <span class="badge" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border:1px solid rgba(255,255,255,0.1); padding:6px 12px; font-weight:500;">
+                                        {{ lieu.nom }}
+                                    </span>
+                                    {% endfor %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5" style="background:rgba(255,255,255,.03); border:1px dashed rgba(255,255,255,.1); border-radius:20px;">
+                <div style="font-size:4rem; margin-bottom:1rem;">✈️</div>
+                <h3 class="fw-bold mb-2">Aucun voyage pour le moment</h3>
+                <p style="color:#94a3b8; max-width:400px; margin:0 auto 2rem;">Commencez par ajouter des lieux à votre plan et confirmez-les pour créer votre premier itinéraire !</p>
+                <a href="/voyages/" class="btn" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; border:none; padding:.7rem 2rem; border-radius:50px; font-weight:600;">
+                    <i class="fas fa-search me-2"></i> Explorer les Destinations
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

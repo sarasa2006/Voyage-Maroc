@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% block title %}Recommandations IA - Voyage Maroc{% endblock %}
+
+{% block extra_css %}
+/* Leaflet map */
+#map { height: 480px; border-radius: 16px; border: 1px solid rgba(255,255,255,.1); }
+.leaflet-popup-content-wrapper { background: #1e293b; color: #f8fafc; border: 1px solid rgba(59,130,246,.4); border-radius: 12px; }
+.leaflet-popup-tip { background: #1e293b; }
+.leaflet-popup-content h6 { color: #60a5fa; margin-bottom: 4px; }
+.leaflet-popup-content small { color: #94a3b8; }
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold display-5">
+            <i class="fas fa-magic me-2" style="color:#3b82f6;"></i> Recommandations IA
+        </h1>
+        <p style="color:#94a3b8; max-width:620px; margin:0 auto;">
+            Choisissez une ville marocaine, indiquez votre budget et vos préférences.
+            L'algorithme vous génère un itinéraire complet avec une carte interactive des lieux exacts.
+        </p>
+    </div>
+
+    <!-- FORMULAIRE -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-9">
+            <div class="card-voyage p-4">
+                <form method="post" id="form-reco">
+                    {% csrf_token %}
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-city me-1" style="color:#3b82f6;"></i> Ville au Maroc
+                            </label>
+                            <select name="ville" id="id_ville" class="form-select bg-dark text-white border-secondary">
+                                {% for v in villes %}
+                                <option value="{{ v }}" {% if v == ville %}selected{% endif %}>{{ v }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-heart me-1" style="color:#3b82f6;"></i> Centre d'intérêt
+                            </label>
+                            <select name="categorie" class="form-select bg-dark text-white border-secondary">
+                                {% for cat in categories %}
+                                <option value="{{ cat }}" {% if cat == categorie %}selected{% endif %}>
+                                    {{ cat|capfirst }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-wallet me-1" style="color:#3b82f6;"></i> Budget total (MAD)
+                            </label>
+                            <input type="number" name="budget" class="form-control bg-dark text-white border-secondary"
+                                   placeholder="Ex: 2000" min="100" value="{{ budget|default:1500 }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-calendar-alt me-1" style="color:#3b82f6;"></i> Nombre de jours
+                            </label>
+                            <input type="number" name="nb_jours" class="form-control bg-dark text-white border-secondary"
+                                   placeholder="Ex: 3" min="1" max="14" value="{{ nb_jours|default:3 }}">
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                                <i class="fas fa-magic me-2"></i> Générer
+                                
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== RÉSULTATS ===== -->
+    {% if itineraire %}
+    <div id="resultats">
+
+        <!-- Stats rapides -->
+        <div class="row g-3 mb-5">
+            <div class="col-md-4">
+                <div class="card-voyage p-3 text-center">
+                    <div style="font-size:2rem;">📍</div>
+                    <div class="fw-bold fs-4">{{ ville }}</div>
+                    <small style="color:#94a3b8;">Destination choisie</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-voyage p-3 text-center">
+                    <div style="font-size:2rem;">📅</div>
+                    <div class="fw-bold fs-4">{{ nb_jours }} jours</div>
+                    <small style="color:#94a3b8;">Durée du voyage</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-voyage p-3 text-center">
+                    <div style="font-size:2rem;">🏛️</div>
+                    <div class="fw-bold fs-4">{{ nb_lieux }} lieux</div>
+                    <small style="color:#94a3b8;">Disponibles dans votre budget</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- Colonne gauche : Itinéraire -->
+            <div class="col-lg-5">
+                <h4 class="fw-bold mb-4">
+                    <i class="fas fa-route me-2" style="color:#3b82f6;"></i>
+                    Itinéraire jour par jour
+                </h4>
+                {% for day in itineraire %}
+                <div class="card-voyage p-3 mb-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <div style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); border-radius:50%; min-width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:12px;">
+                            {{ day.jour }}
+                        </div>
+                        <h6 class="mb-0 fw-bold">Jour {{ day.jour }}</h6>
+                    </div>
+                    {% for lieu in day.lieux %}
+                    <div class="d-flex align-items-start mb-2 p-2" style="background:rgba(255,255,255,.04); border-radius:10px; cursor:pointer;"
+                         onclick="zoomToMarker({{ lieu.lat|default:0 }}, {{ lieu.lng|default:0 }}, '{{ lieu.nom|escapejs }}')"
+                         title="Voir sur la carte">
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <i class="fas fa-map-pin me-2 mt-1" style="color:#3b82f6;"></i>
+                            <div>
+                                <div class="fw-semibold" style="font-size:.95rem;">{{ lieu.nom }}</div>
+                                <span class="badge-categorie" style="font-size:.75rem;">{{ lieu.categorie }}</span>
+                                {% if lieu.cout %}<small style="color:#94a3b8; margin-left:6px;">{{ lieu.cout }} MAD</small>{% endif %}
+                            </div>
+                        </div>
+                        {% if lieu.image %}
+                        <img src="{{ lieu.image.url }}" alt="{{ lieu.nom }}" 
+                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p style="color:#94a3b8; font-size:.9rem;">Aucun lieu pour ce jour.</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Colonne droite : CARTE LEAFLET INTERACTIVE -->
+            <div class="col-lg-7">
+                <h4 class="fw-bold mb-4">
+                    <i class="fas fa-map me-2" style="color:#3b82f6;"></i>
+                    Carte interactive — {{ ville }}
+                    <small style="font-size:.7rem; color:#94a3b8; font-weight:400;">(cliquez sur un marqueur)</small>
+                </h4>
+                <div id="map"></div>
+                <p class="mt-2" style="color:#475569; font-size:.82rem;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Cliquez sur un lieu dans l'itinéraire pour zoomer sur sa position exacte.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+    // Données des marqueurs depuis Django (JSON)
+    const markers_data = {{ markers_json|safe }};
+    const centre       = {{ centre_json|safe }};
+
+    // Initialiser la carte Leaflet
+    const map = L.map('map').setView([centre.lat, centre.lng], centre.zoom);
+
+    // Tuiles OpenStreetMap (gratuites, sans clé API)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+    }).addTo(map);
+
+    // Icône personnalisée
+    const blueIcon = L.divIcon({
+        className: '',
+        html: '<div style="background:#3b82f6; border:3px solid white; border-radius:50%; width:20px; height:20px; box-shadow:0 2px 8px rgba(59,130,246,.6);"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        popupAnchor: [0, -12],
+    });
+
+    // Ajouter les marqueurs
+    const markerRefs = {};
+    markers_data.forEach(function(lieu) {
+        const marker = L.marker([lieu.lat, lieu.lng], {icon: blueIcon}).addTo(map);
+        marker.bindPopup(
+            (lieu.image_url ? '<img src="' + lieu.image_url + '" style="width:100%; height:100px; object-fit:cover; border-radius:8px; margin-bottom:8px;">' : '') +
+            '<h6>' + lieu.nom + '</h6>' +
+            '<span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;border-radius:50px;padding:2px 10px;font-size:.75rem;">' + lieu.categorie + '</span>' +
+            (lieu.cout ? '<br><small>💵 ' + lieu.cout + ' MAD</small>' : '') +
+            (lieu.description ? '<br><small style="color:#94a3b8;">' + lieu.description + '</small>' : '')
+        );
+        markerRefs[lieu.nom] = marker;
+    });
+
+    // Ajuster la vue pour inclure tous les marqueurs
+    if (markers_data.length > 0) {
+        const group = L.featureGroup(Object.values(markerRefs));
+        map.fitBounds(group.getBounds().pad(0.15));
+    }
+
+    // Fonction pour zoomer depuis l'itinéraire
+    function zoomToMarker(lat, lng, nom) {
+        if (!lat || !lng) return;
+        map.flyTo([lat, lng], 16, {animate: true, duration: 1});
+        if (markerRefs[nom]) markerRefs[nom].openPopup();
+    }
+    </script>
+
+    {% else %}
+    <!-- Carte initiale du Maroc entier (sans résultats) -->
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <h4 class="fw-bold mb-3 text-center">
+                <i class="fas fa-map me-2" style="color:#3b82f6;"></i> Carte du Maroc
+            </h4>
+            <div id="map" style="height:400px; border-radius:16px; border:1px solid rgba(255,255,255,.1);"></div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const map = L.map('map').setView([31.7917, -7.0926], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19,
+    }).addTo(map);
+
+    // Marqueurs des villes principales
+    const villes = [
+        {nom:"Marrakech", lat:31.6295, lng:-7.9811},
+        {nom:"Fès", lat:34.0531, lng:-4.9998},
+        {nom:"Chefchaouen", lat:35.1681, lng:-5.2636},
+        {nom:"Agadir", lat:30.4278, lng:-9.5981},
+        {nom:"Casablanca", lat:33.5731, lng:-7.5898},
+        {nom:"Essaouira", lat:31.5085, lng:-9.7595},
+        {nom:"Ouarzazate", lat:30.9202, lng:-6.8936},
+        {nom:"Merzouga", lat:31.0983, lng:-3.9731},
+        {nom:"Rabat", lat:34.0209, lng:-6.8416},
+    ];
+    const icon = L.divIcon({
+        className:'',
+        html:'<div style="background:#3b82f6;border:3px solid white;border-radius:50%;width:16px;height:16px;box-shadow:0 2px 8px rgba(59,130,246,.6);"></div>',
+        iconSize:[16,16], iconAnchor:[8,8], popupAnchor:[0,-10],
+    });
+    villes.forEach(v => L.marker([v.lat,v.lng],{icon}).addTo(map).bindPopup('<strong>'+v.nom+'</strong>'));
+    </script>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Accueil - Voyage Maroc{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section style="background: linear-gradient(to right, rgba(15,23,42,0.8), rgba(15,23,42,0.4)), url('{{ MEDIA_URL }}hassan2.jpg') center/cover; padding: 7rem 2rem; text-align: center;">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3" style="background: linear-gradient(135deg,#60a5fa,#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+            Explorez le Maroc
+        </h1>
+        <p class="lead mb-4" style="color:#cbd5e1; max-width:600px; margin: 0 auto 2rem;">
+            Planifiez vos aventures intelligemment. Itinéraires sur-mesure, recommandations IA et cartes interactives.
+        </p>
+        <a href="/voyages/" class="btn btn-primary btn-lg rounded-pill px-4 me-3">
+            <i class="fas fa-map-marker-alt me-2"></i> Voir les destinations
+        </a>
+        <a href="/ia/recommandation/" class="btn btn-outline-light btn-lg rounded-pill px-4">
+            <i class="fas fa-magic me-2"></i> Recommandation IA
+        </a>
+    </div>
+</section>
+
+<!-- FONCTIONNALITÉS (Casiers) -->
+<div class="container py-5">
+    <h2 class="text-center fw-bold mb-5">Ce que nous proposons</h2>
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card-voyage p-4 text-center h-100">
+                <div style="font-size:2.5rem; margin-bottom:1rem;">🏔️</div>
+                <h5 class="fw-bold">Destinations Uniques</h5>
+                <p style="color:#94a3b8; font-size:.9rem;">Montagne, plage, désert — le Maroc en version exclusive.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-voyage p-4 text-center h-100">
+                <div style="font-size:2.5rem; margin-bottom:1rem;">🗺️</div>
+                <h5 class="fw-bold">Itinéraires sur-mesure</h5>
+                <p style="color:#94a3b8; font-size:.9rem;">Planification automatique selon votre budget et vos centres d'intérêt.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-voyage p-4 text-center h-100">
+                <div style="font-size:2.5rem; margin-bottom:1rem;">🤖</div>
+                <h5 class="fw-bold">Recommandations IA</h5>
+                <p style="color:#94a3b8; font-size:.9rem;">Un algorithme intelligent propose les meilleurs lieux selon vos préférences.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-voyage p-4 text-center h-100">
+                <div style="font-size:2.5rem; margin-bottom:1rem;">⭐</div>
+                <h5 class="fw-bold">Mes Favoris</h5>
+                <p style="color:#94a3b8; font-size:.9rem;">Enregistrez vos lieux préférés et organisez vos voyages facilement.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VILLES À LA UNE -->
+<div class="container pb-5">
+    <h2 class="text-center fw-bold mb-5">Villes à la une</h2>
+    <div class="row g-4">
+        {% for ville in villes_une %}
+        <div class="col-md-4">
+            <div class="card-voyage p-3">
+                {% if ville.image %}
+                    <div style="height:180px; background: url('{{ ville.image.url }}') center/cover; border-radius:12px;"></div>
+                {% else %}
+                    <div style="height:180px; background: linear-gradient(135deg,#1e3a5f,#1e293b); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:3rem;">🇲🇦</div>
+                {% endif %}
+                <div class="p-3">
+                    <h5 class="fw-bold mb-1">{{ ville.nom }}</h5>
+                    <span class="badge-categorie">{{ ville.categorie }}</span>
+                    {% if ville.cout %}<p class="mt-2 mb-0" style="color:#94a3b8;">💵 {{ ville.cout }} MAD</p>{% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center" style="color:#94a3b8;">
+            <p>Ajoutez des lieux via <a href="/admin/" style="color:#3b82f6;">/admin</a> pour les voir apparaître ici.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

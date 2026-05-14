@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Mon Plan de Voyage - Voyage Maroc{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <h1 class="fw-bold mb-2">
+                <i class="fas fa-heart me-2" style="color:#ef4444;"></i> Mon Plan de Voyage
+            </h1>
+            <p class="mb-5" style="color:#94a3b8;">Les lieux que vous avez sélectionnés pour votre prochain voyage au Maroc.</p>
+
+            {% if favoris %}
+            <div class="row g-4 mb-4">
+                {% for favori in favoris %}
+                <div class="col-md-6">
+                    <div class="card-voyage p-0 d-flex flex-row align-items-stretch" style="border-radius:14px; overflow:hidden;">
+                        <!-- Miniature -->
+                        {% if favori.lieu.image %}
+                        <div style="width:110px; min-height:110px; background:url('{{ favori.lieu.image.url }}') center/cover; flex-shrink:0;"></div>
+                        {% else %}
+                        <div style="width:110px; min-height:110px; background:linear-gradient(135deg,#1e3a5f,#1e293b); display:flex; align-items:center; justify-content:center; font-size:2rem; flex-shrink:0;">🇲🇦</div>
+                        {% endif %}
+                        <!-- Infos -->
+                        <div class="p-3 flex-grow-1 d-flex flex-column justify-content-between">
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ favori.lieu.nom }}</h6>
+                                <span class="badge-categorie" style="font-size:.7rem;">{{ favori.lieu.categorie }}</span>
+                                <p class="mb-0 mt-1" style="color:#94a3b8; font-size:.82rem;"><i class="fas fa-map-pin me-1"></i>{{ favori.lieu.ville }}</p>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mt-2">
+                                <strong style="color:#3b82f6;">{{ favori.lieu.cout }} MAD</strong>
+                                <form method="post" action="{% url 'favori_remove' favori.lieu.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.15); color:#ef4444; border:1px solid rgba(239,68,68,.3); border-radius:8px; padding:2px 10px;" title="Retirer">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Récapitulatif et action -->
+            <div class="card-voyage p-4" style="border-radius:16px;">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <p class="mb-1" style="color:#94a3b8;">
+                            <i class="fas fa-list-ul me-1"></i> <strong>{{ favoris|length }}</strong> lieu(x) sélectionné(s)
+                        </p>
+                        <p class="mb-0 fw-bold fs-5">
+                            💰 Total estimé : <span style="color:#3b82f6;">{{ total }} MAD</span>
+                        </p>
+                    </div>
+                    <a href="{% url 'voyage_create' %}" class="btn" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; border:none; padding:.7rem 2rem; border-radius:50px; font-weight:600;">
+                        <i class="fas fa-paper-plane me-2"></i> Créer mon Voyage
+                    </a>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- État vide -->
+            <div class="text-center py-5" style="background:rgba(255,255,255,.03); border:1px dashed rgba(255,255,255,.1); border-radius:20px;">
+                <div style="font-size:4rem; margin-bottom:1rem;">🗺️</div>
+                <h3 class="fw-bold mb-2">Votre plan est vide</h3>
+                <p style="color:#94a3b8; max-width:400px; margin:0 auto 2rem;">Parcourez nos destinations et ajoutez les lieux qui vous inspirent pour planifier votre voyage idéal au Maroc.</p>
+                <a href="/voyages/" class="btn" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; border:none; padding:.7rem 2rem; border-radius:50px; font-weight:600;">
+                    <i class="fas fa-map-marker-alt me-2"></i> Explorer les Destinations
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}{{ lieu.nom }} - Voyage Maroc{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- Fil d'Ariane -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb" style="background:transparent; font-size:.9rem;">
+                    <li class="breadcrumb-item"><a href="/voyages/" style="color:#3b82f6;">Destinations</a></li>
+                    <li class="breadcrumb-item active" style="color:#94a3b8;">{{ lieu.nom }}</li>
+                </ol>
+            </nav>
+
+            <div class="card-voyage p-0 overflow-hidden">
+                <!-- Image / Hero -->
+                {% if lieu.image %}
+                    <div style="height:300px; background: url('{{ lieu.image.url }}') center/cover;"></div>
+                {% else %}
+                    <div style="height:300px; background: linear-gradient(135deg,#1e3a5f,#0f172a); display:flex; align-items:center; justify-content:center; font-size:5rem;">🇲🇦</div>
+                {% endif %}
+
+                <div class="p-5">
+                    <!-- Titre et badges -->
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                        <h1 class="fw-bold mb-0" style="font-size:2rem;">{{ lieu.nom }}</h1>
+                        <span class="badge-categorie">{{ lieu.categorie }}</span>
+                    </div>
+                    <p class="mb-4" style="color:#94a3b8;"><i class="fas fa-map-pin me-1"></i> {{ lieu.ville }}, Maroc</p>
+
+                    <!-- Description -->
+                    {% if lieu.description %}
+                    <p style="line-height:1.8; color:#cbd5e1;">{{ lieu.description }}</p>
+                    {% endif %}
+
+                    <!-- Infos détaillées -->
+                    <div class="row g-3 my-4">
+                        <div class="col-sm-6">
+                            <div style="background:rgba(255,255,255,.04); border-radius:12px; padding:1rem; border:1px solid rgba(255,255,255,.07);">
+                                <small style="color:#94a3b8;">💵 Coût estimé</small>
+                                <div class="fw-bold fs-5 mt-1">{{ lieu.cout }} MAD</div>
+                            </div>
+                        </div>
+                        {% if lieu.lat and lieu.lng %}
+                        <div class="col-sm-6">
+                            <div style="background:rgba(255,255,255,.04); border-radius:12px; padding:1rem; border:1px solid rgba(255,255,255,.07);">
+                                <small style="color:#94a3b8;">📍 Coordonnées GPS</small>
+                                <div class="fw-bold mt-1" style="font-size:.9rem;">{{ lieu.lat }}, {{ lieu.lng }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Carte Leaflet si GPS dispo -->
+                    {% if lieu.lat and lieu.lng %}
+                    <div id="map" style="height:280px; border-radius:12px; margin-bottom:1.5rem; border:1px solid rgba(255,255,255,.1);"></div>
+                    {% endif %}
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="/voyages/" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Retour
+                        </a>
+                        {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'favori_add' lieu.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; border:none; padding:.6rem 1.5rem;">
+                                <i class="fas fa-heart me-2"></i> Ajouter à mon Plan
+                            </button>
+                        </form>
+                        {% else %}
+                        <a href="/users/login/" class="btn" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; border:none; padding:.6rem 1.5rem;">
+                            <i class="fas fa-heart me-2"></i> Ajouter à mon Plan
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if lieu.lat and lieu.lng %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([{{ lieu.lat }}, {{ lieu.lng }}], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    L.marker([{{ lieu.lat }}, {{ lieu.lng }}])
+        .addTo(map)
+        .bindPopup('<b>{{ lieu.nom }}</b><br>{{ lieu.ville }}')
+        .openPopup();
+</script>
+{% endif %}
+{% endblock %}

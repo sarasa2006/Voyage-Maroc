@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Chatbot IA - Voyage Maroc{% endblock %}
+
+{% block extra_css %}
+#chat-box {
+    height: 420px;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background: rgba(255,255,255,.02);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.07);
+    scroll-behavior: smooth;
+}
+#chat-input { border-radius: 0 0 12px 0; background: #1e293b; color: white; border: 1px solid rgba(255,255,255,.12); }
+#chat-input:focus { border-color: #3b82f6; box-shadow: none; }
+#btn-send { border-radius: 0 0 0 12px; }
+.typing-indicator { display:flex; gap:5px; padding:10px 16px; }
+.dot { width:8px; height:8px; background:#94a3b8; border-radius:50%; animation: bounce 1.2s infinite; }
+.dot:nth-child(2) { animation-delay:.2s; }
+.dot:nth-child(3) { animation-delay:.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-4">
+                <h1 class="fw-bold">
+                    <i class="fas fa-robot me-2" style="color:#3b82f6;"></i> Chatbot Voyage Maroc
+                </h1>
+                <p style="color:#94a3b8;">
+                    Posez-moi toutes vos questions sur les voyages au Maroc : villes, budget, transport, cuisine...
+                </p>
+            </div>
+
+            <div class="card-voyage p-4">
+                <!-- Suggestions rapides -->
+                <div class="mb-3 d-flex flex-wrap gap-2" id="suggestions">
+                    <small style="color:#94a3b8; width:100%; margin-bottom:4px;">Suggestions :</small>
+                    <button class="btn btn-sm btn-outline-secondary suggestion-btn">Que visiter à Marrakech ?</button>
+                    <button class="btn btn-sm btn-outline-secondary suggestion-btn">Quel budget prévoir ?</button>
+                    <button class="btn btn-sm btn-outline-secondary suggestion-btn">Besoin d'un visa ?</button>
+                    <button class="btn btn-sm btn-outline-secondary suggestion-btn">Parle-moi de Chefchaouen</button>
+                    <button class="btn btn-sm btn-outline-secondary suggestion-btn">Que manger au Maroc ?</button>
+                </div>
+
+                <!-- Boîte de chat -->
+                <div id="chat-box">
+                    <!-- Message de bienvenue du bot -->
+                    <div class="chat-bubble-bot">
+                        <i class="fas fa-robot me-1" style="color:#3b82f6;"></i>
+                        <strong>Assistant Maroc :</strong><br>
+                        Bonjour ! Je suis votre assistant voyage spécialisé sur le Maroc 🇲🇦.<br>
+                        Posez-moi des questions sur les destinations, le budget, les transports, la nourriture ou les formalités d'entrée !
+                    </div>
+                </div>
+
+                <!-- Zone de saisie -->
+                <div class="input-group mt-3">
+                    <input type="text" id="chat-input" class="form-control" placeholder="Écrivez votre question..." autocomplete="off">
+                    <button class="btn btn-primary" id="btn-send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chatBox = document.getElementById('chat-box');
+const chatInput = document.getElementById('chat-input');
+const btnSend = document.getElementById('btn-send');
+const CSRF_TOKEN = '{{ csrf_token }}';
+
+function scrollBottom() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function appendMessage(text, sender) {
+    const div = document.createElement('div');
+    div.classList.add(sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot');
+    if (sender === 'bot') {
+        div.innerHTML = `<i class="fas fa-robot me-1" style="color:#3b82f6;"></i> <strong>Assistant :</strong><br>${text}`;
+    } else {
+        div.innerHTML = `<i class="fas fa-user me-1"></i> ${text}`;
+    }
+    chatBox.appendChild(div);
+    scrollBottom();
+}
+
+function showTyping() {
+    const div = document.createElement('div');
+    div.classList.add('chat-bubble-bot');
+    div.id = 'typing';
+    div.innerHTML = `<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    chatBox.appendChild(div);
+    scrollBottom();
+}
+
+function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+}
+
+async function sendMessage(message) {
+    if (!message.trim()) return;
+    appendMessage(message, 'user');
+    chatInput.value = '';
+    showTyping();
+
+    try {
+        const response = await fetch('/ia/chat/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ message: message })
+        });
+        const data = await response.json();
+        removeTyping();
+        appendMessage(data.response, 'bot');
+    } catch (error) {
+        removeTyping();
+        appendMessage("Désolé, une erreur est survenue. Réessayez.", 'bot');
+    }
+}
+
+btnSend.addEventListener('click', () => sendMessage(chatInput.value));
+chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(chatInput.value); });
+
+// Suggestions rapides
+document.querySelectorAll('.suggestion-btn').forEach(btn => {
+    btn.addEventListener('click', () => sendMessage(btn.textContent));
+});
+</script>
+{% endblock %}

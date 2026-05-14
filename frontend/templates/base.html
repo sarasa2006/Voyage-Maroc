@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Voyage Maroc{% endblock %}</title>
+
+    <!-- Bootstrap CSS Local (Bootswatch Cosmo) -->
+    <link rel="stylesheet" href="{% static 'base/css/bootstrap.min.css' %}">
+    <!-- FontAwesome CDN (icônes) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap');
+
+        :root {
+            --dark-bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.85);
+            --accent: #2980b9;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--dark-bg);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        /* ========== NAVBAR ========== */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.4rem;
+        }
+        .navbar-brand span { color: #3b82f6; }
+        .nav-link {
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        .nav-link:hover { color: #3b82f6 !important; }
+        .nav-link.active { color: #3b82f6 !important; }
+
+        /* ========== FOOTER ========== */
+        footer {
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 4rem;
+            font-size: 0.9rem;
+        }
+
+        /* ========== CARTES ========== */
+        .card-voyage {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .card-voyage:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+        }
+
+        /* ========== GRADIENT BADGE ========== */
+        .badge-categorie {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border-radius: 50px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* ========== CHATBOT ========== */
+        .chat-bubble-user {
+            background: #3b82f6;
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+            padding: 10px 16px;
+            max-width: 75%;
+            margin-left: auto;
+            margin-bottom: 1rem;
+        }
+        .chat-bubble-bot {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px 16px 16px 4px;
+            padding: 10px 16px;
+            max-width: 75%;
+            margin-bottom: 1rem;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<!-- ===== NAVBAR (Atelier 4) ===== -->
+<nav class="navbar navbar-expand-lg navbar-dark" style="background: rgba(15,23,42,0.97); border-bottom: 1px solid rgba(59,130,246,0.2);">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-globe-africa me-2" style="color:#3b82f6;"></i>
+            Voyage <span>Maroc</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="/">
+                        <i class="fas fa-home me-1"></i> home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'lieux' %}active{% endif %}" href="/voyages/">
+                        <i class="fas fa-map-marker-alt me-1"></i> Destinations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'recommandation' %}active{% endif %}" href="/ia/recommandation/">
+                        <i class="fas fa-magic me-1"></i> Recommandations IA
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'chatbot' %}active{% endif %}" href="/ia/chat/">
+                        <i class="fas fa-robot me-1"></i> Chatbot
+                    </a>
+                </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'favori_list' %}active{% endif %}" href="/favoris/">
+                        <i class="fas fa-heart me-1" style="color:#ef4444;"></i> Mon Plan
+                        {% if favori_count %}
+                        <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem;">{{ favori_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'voyage_list' %}active{% endif %}" href="/voyages/mes-voyages/">
+                        <i class="fas fa-plane-departure me-1"></i> Mes Voyages
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <form method="post" action="/users/logout/" id="logout-form" style="display:none;">
+                        {% csrf_token %}
+                    </form>
+                    <a class="nav-link" href="#" onclick="document.getElementById('logout-form').submit();">
+                        <i class="fas fa-sign-out-alt me-1"></i> Déconnexion
+                    </a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/login/">
+                        <i class="fas fa-sign-in-alt me-1"></i> Connexion
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ===== CONTENU DE LA PAGE ===== -->
+<main>
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+    <p>
+        <i class="fas fa-globe-africa me-2" style="color:#3b82f6;"></i>
+        <strong>Voyage Maroc</strong> &mdash; Planifiez vos aventures au Maroc intelligemment.
+    </p>
+    <p>FDILI Sara &bull; HOUDIR Nouhaila &bull; KAF Salma &mdash; 2025/2026</p>
+</footer>
+
+<!-- Bootstrap JS Local -->
+<script src="{% static 'base/js/bootstrap.bundle.min.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
